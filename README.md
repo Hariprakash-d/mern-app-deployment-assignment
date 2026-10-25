@@ -25,11 +25,18 @@ Terraform initializes cloud provider parameters programmatically to construct th
   * `web_sg`: Exposes port 22 (SSH Management), 3000 (React), and 3001 (Express Backend API).
   * `db_sg`: Strictly maps port 27017, filtering entry exclusively to packets coming out of `web_sg`.
 
+* **Terraform Initialise:** 
+>
+> ![Terraform init](./screenshots/01.mern-aws-deployment-terraform_init.png)
+>
+> ![Terraform init](./screenshots/02.terraform_init.png)
+>
+> ![Terraform Apply](./screenshots/03.terraform_apply.png)
+
 ### 📷 [STEP 1 SCREENSHOT] Cloud Infrastructure Status Verification
 > **Instructions for Submission:** Go to your AWS EC2 Web Console. Take a screenshot showing both your **MERN-Web-Server** and **MERN-DB-Server** instances running cleanly together in the Mumbai region with their private/public IP mappings visible.
 >
-> 📂 *Drop your screenshot below:*
-> ![AWS EC2 Dashboard Verification Placeholder]([PLACE YOUR AWS INSTANCE CONSOLE SCREENSHOT HERE])
+> ![AWS EC2 Dashboard](./screenshots/04.EC2_Instances.png)
 
 ---
 
@@ -44,8 +51,13 @@ Ansible maps server configuration steps across the verified infrastructure over 
 ### 📷 [STEP 2 SCREENSHOT] Automation Terminal Execution Success
 > **Instructions for Submission:** Take a screenshot of your VS Code terminal window showing the final successful **PLAY RECAP** output from your `ansible-playbook -i inventory.ini playbook.yml` run where `failed=0` is printed across all nodes.
 >
-> 📂 *Drop your screenshot below:*
-> ![Ansible Play Recap Terminal Screenshot Placeholder]([PLACE YOUR ANSIBLE PLAY RECAP SCREENSHOT HERE])
+> ![Ansible Play Recap Terminal Screenshot Placeholder](./screenshots/05.Anisible_playbook_execution.png)
+>
+> ![Ansible Play Recap Terminal Screenshot Placeholder](./screenshots/06.Anisible_playbook_execution_1.png)
+>
+> ![Ansible Play Recap Terminal Screenshot Placeholder](./screenshots/07.Anisible_playbook_execution_2.png)
+> 
+> ![Ansible Play Recap Terminal Screenshot Placeholder](./screenshots/08.Anisible_playbook_execution_finish.png)
 
 ---
 
@@ -55,9 +67,9 @@ The full-stack application communicates across subnets flawlessly. When a user c
 ### 📷 [STEP 3 SCREENSHOT] Operational Application Submission Portal
 > **Instructions for Submission:** Open an Incognito Window and load your application interface at `http://13.233.113.193:3000`. Click on **"+ Add Experience"**, fill out a dummy travel destination entry, and save it. Take a screenshot showing the dashboard interface rendering your added trip card successfully without any connectivity error blocks.
 >
-> 📂 *Drop your screenshot below:*
-> ![Live MERN App Working Verification Screenshot Placeholder]([PLACE YOUR WORKING LIVE WEBSITE SCREENSHOT HERE])
-
+> ![Frontend Home](./screenshots/09.Frontend.png)
+---
+> ![Frontend AddExperience](./screenshots/10.Frontend_1.png)
 ---
 
 ## 5. Teardown Procedures (Cost Remediation)
