@@ -1,0 +1,14 @@
+# Terraform State and Runtime files
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Secret Security Keys
+*.pem
+*.key
+*.env
+
+# Ansible runtime caches
+*.log
+.ansible/

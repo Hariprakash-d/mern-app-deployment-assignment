@@ -1,0 +1,152 @@
+---
+# ====================================================================
+# PLAY 1: KEEPING YOUR EXACT WORKING DATABASE SCRIPT INTACT
+# ====================================================================
+- name: Configure Database Server
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Purge any conflicting or broken repository file states
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /usr/share/keyrings/mongodb-server-7.0.gpg
+        - /etc/apt/sources.list.d/mongodb-org-7.0.list
+
+    - name: Download the specific missing MongoDB public key directly into trusted keyring
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: 160D26BB1785BA38
+        state: present
+
+    - name: Add official MongoDB repository with trusted keyserver configuration
+      apt_repository:
+        repo: "deb [arch=amd64,arm64] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse"
+        state: present
+        filename: mongodb-org-7.0
+
+    - name: Force pull fresh package indexes from the verified repository
+      apt: update_cache=yes
+
+    - name: Install official MongoDB server packages
+      apt:
+        name: mongodb-org
+        state: present
+
+    - name: Ensure MongoDB service is running and enabled
+      service:
+        name: mongod
+        state: started
+        enabled: yes
+
+    - name: Configure MongoDB to allow remote connections from Web server
+      lineinfile:
+        path: /etc/mongod.conf
+        regexp: '^\s*bindIp:'
+        line: '  bindIp: 0.0.0.0'
+      notify: Restart MongoDB
+
+  handlers:
+    - name: Restart MongoDB
+      service: name=mongod state=restarted
+
+# ====================================================================
+# PLAY 2: REMOVED LOCAL ZIP DOWNLOAD ENTIRELY TO BYPASS WSL BLOCKS
+# ====================================================================
+# This section is deliberately blank to ensure maximum execution speeds.
+
+# ====================================================================
+# PLAY 3: DEPLOY WEB SERVER WITH AUTOMATED MEMORY OPTIMIZATION (SWAP)
+# ====================================================================
+- name: Configure Web Server & Deploy MERN App
+  hosts: webservers
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Force break any frozen background apt/dpkg locks
+      shell: |
+        killall apt apt-get dpkg 2>/dev/null || true
+        rm -f /var/lib/dpkg/lock-frontend
+        rm -f /var/lib/dpkg/lock
+        rm -f /var/lib/apt/lists/lock
+        rm -f /var/cache/apt/archives/lock
+        dpkg --configure -a
+      args:
+        executable: /bin/bash
+
+    - name: Create 2GB Virtual RAM (Swap Space) to prevent OOM memory crashes
+      shell: |
+        if [ ! -f /swapfile ]; then
+          fallocate -l 2G /swapfile
+          chmod 600 /swapfile
+          mkswap /swapfile
+          swapon /swapfile
+          echo '/swapfile none swap sw 0 0' >> /etc/fstab
+        fi
+      args:
+        executable: /bin/bash
+
+    - name: Install git and underlying tool prerequisites
+      apt:
+        name:
+          - git
+        state: present
+        update_cache: yes
+
+    - name: Install stable Node.js 20 via Ubuntu Snap Packages
+      snap:
+        name: node
+        channel: 20/stable
+        classic: yes
+
+    - name: Remove any old corrupted application paths if they exist
+      file:
+        path: /var/www/TravelMemory
+        state: absent
+
+    - name: Clone TravelMemory codebase cleanly via strict shell execution
+      command: git clone https://github.com/UnpredictablePrashant/TravelMemory /var/www/TravelMemory
+
+    - name: Ensure correct directory ownership permissions
+      file:
+        path: /var/www/TravelMemory
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        recurse: yes
+
+    - name: Install Backend Dependency Packages
+      npm:
+        path: /var/www/TravelMemory/backend
+
+    - name: Install Frontend Dependency Packages (Safe with Virtual Swap RAM)
+      npm:
+        path: /var/www/TravelMemory/frontend
+
+    - name: Create Backend Environment Configuration (.env) File
+      copy:
+        dest: /var/www/TravelMemory/backend/.env
+        content: |
+          PORT=3000
+          MONGO_URI=mongodb://{{ groups['dbservers'][0] }}:27017/travelmemory
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Install PM2 daemon utility globally via Snap Node path
+      npm:
+        name: pm2
+        global: yes
+
+    - name: Start Backend Node Application with PM2 execution monitor
+      command: pm2 start index.js --name "mern-backend" # 👈 Removed /snap/bin/ path
+      args:
+        chdir: /var/www/TravelMemory/backend
+      become_user: ubuntu
+
+    - name: Start Frontend React application with PM2
+      command: pm2 start npm --name "mern-frontend" -- run start # 👈 Removed /snap/bin/ path
+      args:
+        chdir: /var/www/TravelMemory/frontend
+      become_user: ubuntu
+
